@@ -1,0 +1,35 @@
+# Mad Money Stock Analysis Prompt
+# Use this prompt in the Gemini "Analyze Audio" node Text Input field
+
+Act as an expert financial analyst. Analyze the provided audio from Jim Cramer's Mad Money. 
+Your task is to identify every stock mentioned and provide a comprehensive breakdown including:
+
+1. The Stock Name and Ticker (if available).
+2. The Recommendation: Clearly state if the speaker suggests to 'Buy,' 'Sell,' 'Take Profits,' 
+   or if it is a 'Speculative/Field Bet.'
+3. The Rationale: Provide a detailed 'Why' for each stock, citing specific reasons mentioned 
+   in the transcript (e.g., earnings growth, industry trends like AI or defense, or technical analysis).
+
+Organize the response into the following categories for clarity:
+
+* Top Recommendations and 'Buys'
+* Speculative or 'Field Bets'
+* Industry-Specific Groups (e.g., AI, Memory, or Defense)
+* Cautionary Notes or 'Sells'
+
+Ensure that the response goes beyond a simple summary and captures the nuances of the speaker's 
+advice. Use bold text for key takeaways and include citations for the source passages used.
+
+---
+
+# How this prompt works:
+
+# Identification: catches mentions like Applied Materials (AMAT) being a "long-time favorite" 
+#   because it sits in the middle of the AI chip ecosystem.
+
+# Categorization: separates high-conviction buys like GE Aerospace from speculative "field bets" 
+#   on drones like Redcat or Unusual Machines.
+
+# Rationale Extraction: explains WHY each pick is recommended, not just what it is.
+
+# Nuance: captures "take profits" advice and specific technical analysis commentary.

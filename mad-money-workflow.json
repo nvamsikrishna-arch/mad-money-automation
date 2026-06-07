@@ -1,0 +1,274 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "19964311-6e06-49de-83f2-ec139d9762e9",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://feeds.simplecast.com/TkQfZXMD",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "44bdf9ca-4a1b-4fa0-b61a-7953c8fbdab7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const xmlData = $input.first().json.data;\n\nconst mp3Match = xmlData.match(/url=\"(https:\\/\\/[^\"]+\\.mp3[^\"]*)\"/);\nconst titleMatch = xmlData.match(/<title>Mad Money[^<]*<\\/title>/);\nconst dateMatch = xmlData.match(/<pubDate>([^<]+)<\\/pubDate>/);\n\nreturn [{\n  json: {\n    mp3_url: mp3Match ? mp3Match[1] : null,\n    episode_title: titleMatch ? titleMatch[0].replace(/<\\/?title>/g, '') : 'Mad Money Episode',\n    pub_date: dateMatch ? dateMatch[1] : new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a9fa0dcd-adf9-46f0-be0e-3ff1874a27ba",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawUrl = $input.first().json.mp3_url;\nconst episodeTitle = $input.first().json.episode_title;\nconst pubDate = $input.first().json.pub_date;\n\n// Fix the &amp; encoding in the URL\nconst cleanUrl = rawUrl.replace(/&amp;/g, '&');\n\nreturn [{\n  json: {\n    mp3_url: cleanUrl,\n    episode_title: episodeTitle,\n    pub_date: pubDate\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "9ce52c75-9dce-4cf2-b644-1dee805136e4",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.mp3_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "3a87a042-5589-4dce-a7ff-e972997bdd91",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Act as an expert financial analyst. Analyze the provided audio from Jim Cramer's Mad Money. Your task is to identify every stock mentioned and provide a comprehensive breakdown including:\n\n1. The Stock Name and Ticker (if available).\n2. The Recommendation: Clearly state if the speaker suggests to 'Buy,' 'Sell,' 'Take Profits,' or if it is a 'Speculative/Field Bet.'\n3. The Rationale: Provide a detailed 'Why' for each stock, citing specific reasons mentioned in the transcript.\n\nOrganize the response into the following categories:\n* Top Recommendations and 'Buys'\n* Speculative or 'Field Bets'\n* Industry-Specific Groups (e.g., AI, Memory, or Defense)\n* Cautionary Notes or 'Sells'\n\nUse bold text for key takeaways.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "536984e5-98a9-478c-8f9b-7131da126bc4",
+      "name": "Analyze audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "G8QCIJY1MHB2Jcsy",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "e291172b-9b8c-413d-8b21-8ccb87500e15",
+      "name": "Wait",
+      "webhookId": "4c202837-32b2-4850-bbec-a76cde4cc6a3"
+    },
+    {
+      "parameters": {
+        "sendTo": "nvamsikrishna@gmail.com",
+        "subject": "=📈 Mad Money Analysis — {{ new Date().toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) }}",
+        "message": "=<html>\n<body style=\"font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#333;\">\n\n<div style=\"background:#cc0000;padding:20px;border-radius:8px;margin-bottom:20px;\">\n  <h1 style=\"color:white;margin:0;\">📈 Mad Money Daily Analysis</h1>\n  <p style=\"color:#ffcccc;margin:5px 0 0;\">{{ new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'}) }}</p>\n</div>\n\n{{ $json.html_content }}\n\n<div style=\"background:#f5f5f5;padding:15px;border-radius:8px;margin-top:30px;text-align:center;\">\n  <p style=\"color:#999;font-size:12px;margin:0;\">Sent automatically by your n8n Mad Money automation</p>\n</div>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "0ec31618-d0db-4425-bbb5-c21460ec3808",
+      "name": "Send a message",
+      "webhookId": "1f76d9f4-64c5-4a48-b2b3-f21cbc7817c6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1metGu0QlqSUAifs",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.content.parts[0].text;\n\nlet html = '';\n\nconst lines = text.split('\\n');\n\nfor (const line of lines) {\n  const trimmed = line.trim();\n  \n  if (trimmed.startsWith('### ')) {\n    const title = trimmed.replace('### ', '');\n    html += `<h2 style=\"color:#ffffff;background:#cc0000;padding:10px 15px;border-radius:6px;margin-top:25px;\">${title}</h2>`;\n  } else if (trimmed.startsWith('## ')) {\n    const title = trimmed.replace('## ', '');\n    html += `<h2 style=\"color:#cc0000;\">${title}</h2>`;\n  } else if (trimmed === '---') {\n    html += '<hr style=\"border:1px solid #eee;margin:20px 0;\">';\n  } else if (trimmed.startsWith('* **') || trimmed.startsWith('*   **')) {\n    const content = trimmed.replace(/^\\*\\s+/, '').replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');\n    html += `<div style=\"background:#f9f9f9;border-left:4px solid #cc0000;padding:12px 15px;margin:10px 0;border-radius:0 6px 6px 0;\">${content}</div>`;\n  } else if (trimmed.startsWith('* ')) {\n    const content = trimmed.replace(/^\\*\\s+/, '').replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');\n    html += `<div style=\"padding:6px 15px;margin:4px 0;\">&bull; ${content}</div>`;\n  } else if (trimmed !== '') {\n    const content = trimmed.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');\n    html += `<p style=\"margin:6px 0;padding:0 5px;\">${content}</p>`;\n  }\n}\n\nreturn [{\n  json: {\n    html_content: html\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "a2058776-54d6-46b1-9377-b769fdbae62d",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2a380fdb-e628-42b0-be72-3b8c526d2b02",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "667387a8c1e2a5c3bff2317638cba9312714e9a8e9379cf26267d13c6ab3bb77"
+  },
+  "nodeGroups": [],
+  "id": "XXSClyiIdcGycyNj",
+  "tags": []
+}
